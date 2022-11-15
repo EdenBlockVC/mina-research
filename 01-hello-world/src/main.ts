@@ -57,11 +57,15 @@ import {
     console.log('state after second update:', num2.toString());
 
     // Send an invalid state update
-    const txn3 = await Mina.transaction(deployerAccount, () => {
-        contract.update(Field(100));
-        contract.sign(zkAppPrivateKey);
-    });
-    await txn3.send().wait();
+    try { 
+        const txn3 = await Mina.transaction(deployerAccount, () => {
+            contract.update(Field(100));
+            contract.sign(zkAppPrivateKey);
+        });
+        await txn3.send().wait();
+    } catch (err: any) {
+        console.log(err);
+    }
 
     // Check the new state
     const num3 = contract.num.get();

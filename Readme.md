@@ -311,6 +311,8 @@ export class Add extends SmartContract {
 
 ## Hello World
 
+### Introduction
+
 Moving forward to a more complex example, I continue with [`hello-world`](https://docs.minaprotocol.com/zkapps/tutorials/hello-world).
 
 > We will write a basic smart contract that stores a number as on-chain state and contains logic to only allow this number to be replaced by its square (e.g. 2 -> 4 -> 16...). We will create this project using the Mina zkApp CLI, write our smart contract code, and then use a local Mina blockchain to interact with it.
@@ -726,3 +728,70 @@ Not useful output:
 I don't know how the verbosity can be reduced, but I think it is important to do so.
 
 It seems that once the transaction fails execution stops. I tried reading the state after the invalid state transition, but that output is not displayed in my console.
+
+Checking the final repository and the documentation once again, I see I was hasty to try my own code and the transaction that is expected to fail is wrapped in a try catch statement. This feels like a pretty high cost for the dev to wrap all txs in a try catch, otherwise the execution of the script stops.
+
+This might create problems for people not knowing they have to do this because their script unexpectedly stops. And creates different problems for people who do know they have to do this, because they will end up in wrapping everying in a try catch. 😅
+
+Once the full code building and executing the transaction was wrapped, the execution was able to proceed and read the state of the contract after the failed transaction.
+
+```ts
+// Send an invalid state update
+try { 
+    const txn3 = await Mina.transaction(deployerAccount, () => {
+        contract.update(Field(100));
+        contract.sign(zkAppPrivateKey);
+    });
+    await txn3.send().wait();
+} catch (err: any) {
+    console.log(err);
+}
+```
+
+Initially I only wrapped the line that sends and waits for the execution, but that's not enough to catch the error. To be clear, this still stops the execution of the script:
+
+```ts
+try {
+    await txn3.send().wait();
+} catch (err: any) {
+    console.log(err);
+}
+```
+
+To properly catch the thrown error, the whole transaction needs to be wrapped in a try catch statement.
+
+Still, I was able to move forward and catch the thrown error, allowing my script to continue execution after the failed transaction. Still the output feels too verbose:
+
+```sh
+$ npm run exec
+
+> 01-hello-world@0.1.0 exec
+> npm run build && node build/src/main.js
+
+
+> 01-hello-world@0.1.0 build
+> tsc -p tsconfig.json
+
+SnarkyJS is ready!
+state after init: 3
+state after update: 9
+state after second update: 81
+Error: assert_equal: 100 != 6561
+    at failwith (/Users/cleanunicorn/Development/github.com/edenblockvc/mina-tutorial/01-hello-world/node_modules/snarkyjs/dist/node/_node_bindings/snarky_js_node.bc.cjs:75528:50)
+    at /Users/cleanunicorn/Development/github.com/edenblockvc/mina-tutorial/01-hello-world/node_modules/snarkyjs/dist/node/_node_bindings/snarky_js_node.bc.cjs:87239:48
+    at caml_call_gen (/Users/cleanunicorn/Development/github.com/edenblockvc/mina-tutorial/01-hello-world/node_modules/snarkyjs/dist/node/_node_bindings/snarky_js_node.bc.cjs:2081:17)
+    at /Users/cleanunicorn/Development/github.com/edenblockvc/mina-tutorial/01-hello-world/node_modules/snarkyjs/dist/node/_node_bindings/snarky_js_node.bc.cjs:2093:18
+    at caml_call_gen (/Users/cleanunicorn/Development/github.com/edenblockvc/mina-tutorial/01-hello-world/node_modules/snarkyjs/dist/node/_node_bindings/snarky_js_node.bc.cjs:2078:27)
+    at caml_call_gen (/Users/cleanunicorn/Development/github.com/edenblockvc/mina-tutorial/01-hello-world/node_modules/snarkyjs/dist/node/_node_bindings/snarky_js_node.bc.cjs:2084:16)
+    at caml_call_gen (/Users/cleanunicorn/Development/github.com/edenblockvc/mina-tutorial/01-hello-world/node_modules/snarkyjs/dist/node/_node_bindings/snarky_js_node.bc.cjs:2084:16)
+    at caml_call3 (/Users/cleanunicorn/Development/github.com/edenblockvc/mina-tutorial/01-hello-world/node_modules/snarkyjs/dist/node/_node_bindings/snarky_js_node.bc.cjs:7614:40)
+    at assert_equal$0 (/Users/cleanunicorn/Development/github.com/edenblockvc/mina-tutorial/01-hello-world/node_modules/snarkyjs/dist/node/_node_bindings/snarky_js_node.bc.cjs:139235:38)
+    at equal$2 (/Users/cleanunicorn/Development/github.com/edenblockvc/mina-tutorial/01-hello-world/node_modules/snarkyjs/dist/node/_node_bindings/snarky_js_node.bc.cjs:140366:56)
+state after third update: 81
+Shutting down...
+```
+
+### Conclusion
+
+I am genuienly happy that I was able to develop, deploy and interact with a very simple contract. There are 2 more tutorials I plan to go over. I am curious to see how the complexity of the contract increases and how the development experience changes.
+
