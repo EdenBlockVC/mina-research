@@ -209,6 +209,10 @@ After a while the [account page](https://berkeley.minaexplorer.com/wallet/B62qoQ
 
 I don't know why 50 tokens were sent and I only have 49, but I don't really care at the moment.
 
+While writing this journal I also got in contact with some of the Mina devs on Discord and I received this answer to the question of why `49`:
+
+> mina has a 1 mina account creation fee.  It is costly on the network if there are a lot of accounts to store, so there is a disincentive to spam a bunch of new wallets.
+
 It seems I can deploy a contract right away:
 
 ```sh
