@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "networks": {
+    "mina-tutorial": {
+      "url": "https://proxy.berkeley.minaexplorer.com/graphql",
+      "keyPath": "keys/mina-tutorial.json",
+      "fee": "0.1",
+      "smartContract": "Add"
+    }
+  }
+}
