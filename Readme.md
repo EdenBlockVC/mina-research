@@ -457,4 +457,272 @@ I checked the [original repository](https://github.com/o1-labs/zkapp-cli) trying
 
 Until things become more clear, I can't see a way to upgrade the tools to the latest version.
 
+I found out that zk apps can have up to 8 fields of on-chain state, each field storing 32 bytes. I currently don't understand why this limitation exists and it makes me think about how to increase this limit. Would I be able to increase this limit if I create a different contract that stores another 8 fields? Are these 8 fields public or private? I have a few questions right now, but I have to focus on the task at hand.
 
+I keep editing the Square contract, adding different parts of the code. I am not sure if I am doing it right, but I am trying to follow the documentation as closely as possible.
+
+Writing the update method there's an open question I have, after getting the current value of the number, why do I have to assert it's value? It's not changed and since it was obtained from the state of the contract.
+
+```ts
+const currentNum = this.num.get();
+this.num.assertEquals(currentNum);
+```
+
+It's like doing:
+
+```ts
+const a = b;
+assert(a === b);
+```
+
+I don't know if I am missing something, but I will keep going.
+
+Going through the documentation I find a link to [SnarkyJS](https://docs.minaprotocol.com/zkapps/snarkyjs-reference) and I proceed to quickly read through it to get an idea of what the doc looks like.
+
+The docs explain that the data passed as an input to a smart contract is private (that's great to hear), but the stored data can be public, such as `num` currently is.
+
+> A future tutorial will cover an example leveraging privacy.
+
+Thus, after adding the `update` method, the smart contract is complete.
+
+Let's see if I can finally interact with a contract on chain.
+
+### Interacting with the contract
+
+Now I am starting to edit the `main.ts` that will interact with the contract.
+
+I start by adding the imports and, again to my delight, each import is described in the documentation.
+
+After writing the `main` method and trying to execute it, I notice the execution hangs forever:
+
+```sh
+$ npm run exec
+
+> 01-hello-world@0.1.0 exec
+> npm run build && node build/src/index.js
+
+
+> 01-hello-world@0.1.0 build
+> tsc -p tsconfig.json
+```
+
+I find out the problem was with my `exec` script and I proceed to fix it by changing `index.js` to `main.js`.
+
+```js
+"scripts": {
+  "exec": "npm run build && node build/src/main.js"
+}
+```
+
+Cool, it seems like I got a successful blockchain startup and shutdown.
+
+```sh
+$ npm run exec          
+
+> 01-hello-world@0.1.0 exec
+> npm run build && node build/src/main.js
+
+
+> 01-hello-world@0.1.0 build
+> tsc -p tsconfig.json
+
+SnarkyJS is ready!
+Shutting down...
+```
+
+Success! Let's keep pushing forward to get to the execution part.
+
+After adding the code to deploy the contract, the execution is successful:
+
+```sh
+$ npm run exec
+
+> 01-hello-world@0.1.0 exec
+> npm run build && node build/src/main.js
+
+
+> 01-hello-world@0.1.0 build
+> tsc -p tsconfig.json
+
+SnarkyJS is ready!
+state after init: 3
+Shutting down...
+```
+
+The deployment seems successful, now we get to the interesting part.
+
+Playing with the source code I have right now, it seems I don't have access to read the state, or the state was not written to yet.
+
+I made the following change to the `init` method to see if there is a state set, if that's the case set `num` to `9`, otherwise initialize to `3`:
+
+```ts
+@method init() {
+    try {
+        const num = this.num.get();
+        this.num.set(Field(9));
+    } catch { 
+        this.num.set(Field(3));
+    }
+}
+```
+
+And the deploy script was updated to call the `init()` method twice:
+
+```ts
+    const deployTxn = await Mina.transaction(deployerAccount, () => {
+
+        // It seems the initial test accounts don't have enough funds to deploy a contract.
+        AccountUpdate.fundNewAccount(deployerAccount);
+
+        contract.deploy({ zkappKey: zkAppPrivateKey });
+        contract.init();
+        contract.sign(zkAppPrivateKey);
+        contract.init();
+        contract.sign(zkAppPrivateKey);
+    });
+    await deployTxn.send().wait();
+```
+
+I had to add a `contract.sign(zkAppPrivateKey)` after each `init()` otherwise I had errors when trying to execute.
+
+However, executing the deploy script it seems that the second state is not written to the contract because I see the number 3, not 9:
+
+```sh
+$ npm run exec
+
+> 01-hello-world@0.1.0 exec
+> npm run build && node build/src/main.js
+
+
+> 01-hello-world@0.1.0 build
+> tsc -p tsconfig.json
+
+SnarkyJS is ready!
+state after init: 3
+Shutting down...
+```
+
+Thinking more about it, makes sense because the first transaction was not committed to the blockchain, so the first `init()` was not executed, but I'm still not sure what I executed by signing the `init()` method twice.
+
+I reverted the changes to the `init()` method and the deploy script and execute the deploy script again.
+
+I fixed the `update` method because I had a bug in it, and I was not properly asserting the square operation result.
+
+```ts
+@method update(square: Field) {
+    const currentNum = this.num.get();
+    this.num.assertEquals(currentNum);
+    square.assertEquals(currentNum.mul(currentNum));
+    this.num.set(square);
+}
+```
+
+The execution is successful:
+
+```sh
+$ npm run exec
+
+> 01-hello-world@0.1.0 exec
+> npm run build && node build/src/main.js
+
+
+> 01-hello-world@0.1.0 build
+> tsc -p tsconfig.json
+
+SnarkyJS is ready!
+state after init: 3
+state after update: 9
+Shutting down...
+```
+
+I updated the code to call the `update` method once again and the execution is successful:
+
+```sh
+$ npm run exec
+
+> 01-hello-world@0.1.0 exec
+> npm run build && node build/src/main.js
+
+
+> 01-hello-world@0.1.0 build
+> tsc -p tsconfig.json
+
+SnarkyJS is ready!
+state after init: 3
+state after update: 9
+state after second update: 81
+Shutting down...
+```
+
+The documentation proceeds to create a transaction that tries to push an invalid transition state so I am going to do the same.
+
+I create a new transaction that tries to update to `100`, which is clearly not the square of `81`:
+
+```ts
+// Send an invalid state update
+const txn3 = await Mina.transaction(deployerAccount, () => {
+    contract.update(Field(100));
+    contract.sign(zkAppPrivateKey);
+});
+await txn3.send().wait();
+```
+
+Executing this we get an expected error:
+
+```sh
+$ npm run exec
+
+> 01-hello-world@0.1.0 exec
+> npm run build && node build/src/main.js
+
+
+> 01-hello-world@0.1.0 build
+> tsc -p tsconfig.json
+
+SnarkyJS is ready!
+state after init: 3
+state after update: 9
+state after second update: 81
+/Users/cleanunicorn/Development/github.com/edenblockvc/mina-tutorial/01-hello-world/node_modules/snarkyjs/dist/node/_node_bindings/snarky_js_node.bc.cjs:7565
+         throw err;
+         ^
+
+Error: assert_equal: 100 != 6561
+    at failwith (/Users/cleanunicorn/Development/github.com/edenblockvc/mina-tutorial/01-hello-world/node_modules/snarkyjs/dist/node/_node_bindings/snarky_js_node.bc.cjs:75528:50)
+    at /Users/cleanunicorn/Development/github.com/edenblockvc/mina-tutorial/01-hello-world/node_modules/snarkyjs/dist/node/_node_bindings/snarky_js_node.bc.cjs:87239:48
+    at caml_call_gen (/Users/cleanunicorn/Development/github.com/edenblockvc/mina-tutorial/01-hello-world/node_modules/snarkyjs/dist/node/_node_bindings/snarky_js_node.bc.cjs:2081:17)
+    at /Users/cleanunicorn/Development/github.com/edenblockvc/mina-tutorial/01-hello-world/node_modules/snarkyjs/dist/node/_node_bindings/snarky_js_node.bc.cjs:2093:18
+    at caml_call_gen (/Users/cleanunicorn/Development/github.com/edenblockvc/mina-tutorial/01-hello-world/node_modules/snarkyjs/dist/node/_node_bindings/snarky_js_node.bc.cjs:2078:27)
+    at caml_call_gen (/Users/cleanunicorn/Development/github.com/edenblockvc/mina-tutorial/01-hello-world/node_modules/snarkyjs/dist/node/_node_bindings/snarky_js_node.bc.cjs:2084:16)
+    at caml_call_gen (/Users/cleanunicorn/Development/github.com/edenblockvc/mina-tutorial/01-hello-world/node_modules/snarkyjs/dist/node/_node_bindings/snarky_js_node.bc.cjs:2084:16)
+    at caml_call3 (/Users/cleanunicorn/Development/github.com/edenblockvc/mina-tutorial/01-hello-world/node_modules/snarkyjs/dist/node/_node_bindings/snarky_js_node.bc.cjs:7614:40)
+    at assert_equal$0 (/Users/cleanunicorn/Development/github.com/edenblockvc/mina-tutorial/01-hello-world/node_modules/snarkyjs/dist/node/_node_bindings/snarky_js_node.bc.cjs:139235:38)
+    at equal$2 (/Users/cleanunicorn/Development/github.com/edenblockvc/mina-tutorial/01-hello-world/node_modules/snarkyjs/dist/node/_node_bindings/snarky_js_node.bc.cjs:140366:56)
+```
+
+This reminds me of the debug dump that was hard to read generated by Truffle, but at least I am able to read it. It feels a bit too verbose, since the assert error is the only thing useful right now. The rest of the output is just noise.
+
+Useful output:
+
+```
+Error: assert_equal: 100 != 6561
+```
+
+Not useful output:
+
+```
+    at failwith (/Users/cleanunicorn/Development/github.com/edenblockvc/mina-tutorial/01-hello-world/node_modules/snarkyjs/dist/node/_node_bindings/snarky_js_node.bc.cjs:75528:50)
+    at /Users/cleanunicorn/Development/github.com/edenblockvc/mina-tutorial/01-hello-world/node_modules/snarkyjs/dist/node/_node_bindings/snarky_js_node.bc.cjs:87239:48
+    at caml_call_gen (/Users/cleanunicorn/Development/github.com/edenblockvc/mina-tutorial/01-hello-world/node_modules/snarkyjs/dist/node/_node_bindings/snarky_js_node.bc.cjs:2081:17)
+    at /Users/cleanunicorn/Development/github.com/edenblockvc/mina-tutorial/01-hello-world/node_modules/snarkyjs/dist/node/_node_bindings/snarky_js_node.bc.cjs:2093:18
+    at caml_call_gen (/Users/cleanunicorn/Development/github.com/edenblockvc/mina-tutorial/01-hello-world/node_modules/snarkyjs/dist/node/_node_bindings/snarky_js_node.bc.cjs:2078:27)
+    at caml_call_gen (/Users/cleanunicorn/Development/github.com/edenblockvc/mina-tutorial/01-hello-world/node_modules/snarkyjs/dist/node/_node_bindings/snarky_js_node.bc.cjs:2084:16)
+    at caml_call_gen (/Users/cleanunicorn/Development/github.com/edenblockvc/mina-tutorial/01-hello-world/node_modules/snarkyjs/dist/node/_node_bindings/snarky_js_node.bc.cjs:2084:16)
+    at caml_call3 (/Users/cleanunicorn/Development/github.com/edenblockvc/mina-tutorial/01-hello-world/node_modules/snarkyjs/dist/node/_node_bindings/snarky_js_node.bc.cjs:7614:40)
+    at assert_equal$0 (/Users/cleanunicorn/Development/github.com/edenblockvc/mina-tutorial/01-hello-world/node_modules/snarkyjs/dist/node/_node_bindings/snarky_js_node.bc.cjs:139235:38)
+    at equal$2 (/Users/cleanunicorn/Development/github.com/edenblockvc/mina-tutorial/01-hello-world/node_modules/snarkyjs/dist/node/_node_bindings/snarky_js_node.bc.cjs:140366:56)
+```
+
+I don't know how the verbosity can be reduced, but I think it is important to do so.
+
+It seems that once the transaction fails execution stops. I tried reading the state after the invalid state transition, but that output is not displayed in my console.
