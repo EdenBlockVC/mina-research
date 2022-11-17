@@ -799,3 +799,172 @@ Shutting down...
 
 I am genuienly happy that I was able to develop, deploy and interact with a very simple contract. There are 2 more tutorials I plan to go over. I am curious to see how the complexity of the contract increases and how the development experience changes.
 
+## Private inputs and hash functions
+
+### Introduction
+
+In the meantime the `zkapp-cli` was updated to `0.5.1` and I updated my local installation by pulling the `main` branch and linking the package.
+
+```sh
+$ git pull o1-labs
+remote: Enumerating objects: 240, done.
+remote: Counting objects: 100% (187/187), done.
+remote: Compressing objects: 100% (65/65), done.
+remote: Total 144 (delta 84), reused 122 (delta 69), pack-reused 0
+Receiving objects: 100% (144/144), 72.00 KiB | 1.41 MiB/s, done.
+Resolving deltas: 100% (84/84), completed with 19 local objects.
+From https://github.com/o1-labs/zkapp-cli
+   0b5a520..596215a  bump-version-0.5.0             -> o1-labs/bump-version-0.5.0
+   4f2b003..c3c8508  feature/add-contract-to-nuxt   -> o1-labs/feature/add-contract-to-nuxt
+   bd8fccd..a606d35  feature/add-contract-to-svelte -> o1-labs/feature/add-contract-to-svelte
+ * [new branch]      fix/errors                     -> o1-labs/fix/errors
+   e10b6ef..5425df3  main                           -> o1-labs/main
+You asked to pull from the remote 'o1-labs', but did not specify
+a branch. Because this is not the default configured remote
+(base) 
+ 16:33:20  ✘  cleanunicorn@Daniels-MacBook-Pro-2  ...github.com/cleanunicorn/zkapp-cli  ⬡ v14.17.6   main ✔ 
+$ git merge o1-labs/main               
+Updating c379325..5425df3
+Fast-forward
+ examples/sudoku/ts/src/sudoku.ts           |  4 ++--
+ examples/tictactoe/ts/src/tictactoe-lib.ts |  4 ++--
+ package-lock.json                          | 18 +++++++++---------
+ package.json                               |  4 ++--
+ src/lib/deploy.js                          |  9 +++++++--
+ templates/project-ts/package-lock.json     | 18 +++++++++---------
+ templates/project-ts/package.json          |  2 +-
+ templates/project-ts/src/Add.test.ts       | 23 +++++++++++++++--------
+ templates/project-ts/src/Add.ts            |  8 ++++++--
+ 9 files changed, 53 insertions(+), 37 deletions(-)
+(base) 
+ 16:33:36  cleanunicorn@Daniels-MacBook-Pro-2  ...github.com/cleanunicorn/zkapp-cli  ⬡ v14.17.6   main ✔ ⬆ 
+$ npm i -g .              
+
+changed 1 package, and audited 3 packages in 875ms
+
+found 0 vulnerabilities
+```
+
+Made sure that the new version is visible when running `zk`:
+
+```sh
+$ zk --version
+0.5.1
+```
+
+### Project setup
+
+From the documentation I find out that the transactions sent to the blockchain are private by default, so any argument sent to the smart contract is already shielded for privacy. A different way to think about this is that I am not sending the arguments, but I am providing the proof for the correct execution of the contract.
+
+I can make the values visible if I store them in the contract as state.
+
+I set up a new project, this time with the new `zkapp-cli`:
+
+```sh
+$ zk project 02-private-inputs-and-hash-functions
+✔ UI: Set up project
+✔ Initialize Git repo
+✔ Set up project
+✔ NPM install
+✔ NPM build contract
+✔ Set project name
+✔ Git init commit
+
+Success!
+
+Next steps:
+  cd 02-private-inputs-and-hash-functions
+  git remote add origin <your-repo-url>
+  git push -u origin main
+```
+
+Because I want the folder to be part of this git repo, I remove the `.git` folder and add the folder to the git repo:
+
+```sh
+$ rm -rf 02-private-inputs-and-hash-functions/.git
+$ git add 02-private-inputs-and-hash-functions
+```
+
+I delete the example contracts which come with the project:
+
+```sh
+$ rm 02-private-inputs-and-hash-functions/src/Add.ts
+$ rm 02-private-inputs-and-hash-functions/src/Add.test.ts
+```
+
+And create new files with the cli tool:
+
+```sh
+$ cd 02-private-inputs-and-hash-functions
+$ zk file src/IncrementSecret
+Created src/IncrementSecret.ts
+Created src/IncrementSecret.test.ts
+```
+
+And update `index.ts` to load the new contract.
+
+```ts
+import { IncrementSecret } from './IncrementSecret.js';
+
+export { IncrementSecret };
+```
+
+I always prefer to write things by hand, it forces me to think about each line of code, so I start editing `IncrementSecret.ts`, all this while having `Square.ts` in a separate tab to see how the contract is structured and if any signigicant differences are between the two.
+
+The deploy is not yet different from the previous tutorial, however an import is new `Poseidon`. Checking the next step in the tutorial, I see `Poseidon` provides a hash function.
+
+I add the init method. This time the `init` method receives 2 arguments and their purpose is explained in the documentation.
+
+Right away I notice some errors in my IDE, even though I have a very similar code structure as in `Square`. This might be from the new updates to the `SnarkyJS` library. But I can't know for sure yet.
+
+Trying to find out if the errors are valid, I skip ahead and check how the previous contract was compiled and ran. I add a new line in `package.json` to compile and run `main.ts`:
+
+```json
+"scripts": {
+  ...
+  "exec": "npm run build && node build/src/main.js"
+}
+```
+
+And try to run it:
+
+```sh
+$ npm run exec
+
+> 02-private-inputs-and-hash-functions@0.1.0 exec
+> npm run build && node build/src/main.js
+
+
+> 02-private-inputs-and-hash-functions@0.1.0 build
+> tsc -p tsconfig.json
+
+src/IncrementSecret.ts:13:6 - error TS2345: Argument of type 'IncrementSecret' is not assignable to parameter of type 'SmartContract & { constructor: any; }'.
+  Type 'IncrementSecret' is not assignable to type 'SmartContract'.
+    Types of property 'init' are incompatible.
+      Type '(salt: Field, firstSecret: Field) => void' is not assignable to type '(zkappKey?: PrivateKey | undefined) => void'.
+
+13     @state(Field) x = State<Field>();
+        ~~~~~~~~~~~~
+
+src/IncrementSecret.ts:23:6 - error TS2345: Argument of type 'IncrementSecret' is not assignable to parameter of type 'SmartContract & { constructor: any; }'.
+  Type 'IncrementSecret' is not assignable to type 'SmartContract'.
+
+23     @method init(salt: Field, firstSecret: Field) {
+        ~~~~~~
+
+src/IncrementSecret.ts:23:13 - error TS2416: Property 'init' in type 'IncrementSecret' is not assignable to the same property in base type 'SmartContract'.
+  Type '(salt: Field, firstSecret: Field) => void' is not assignable to type '(zkappKey?: PrivateKey | undefined) => void'.
+
+23     @method init(salt: Field, firstSecret: Field) {
+               ~~~~
+
+
+Found 3 errors in the same file, starting at: src/IncrementSecret.ts:13
+```
+
+I have to contact the development team and see what's going on. I assume the library has introduced.
+
+![a few minutes later](static/SCR-20221117-fte.jpeg)
+
+I got a link to the changelog, and I was able to see why the `init` method was creating an error for me.
+
