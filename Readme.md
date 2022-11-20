@@ -23,7 +23,7 @@ $ npm install -g zkapp-cli
 Once that is done, I have access to the `zk` cli tool.
 
 ```sh
-$ zk                 
+$ zk
 Usage: zk <command> [options]
 
 Commands:
@@ -44,7 +44,7 @@ Options:
     █ ▀ █ █ █ ▀█ █▀█
 
      Mina Protocol
-      
+
 
 Please provide a command.
 ```
@@ -52,7 +52,7 @@ Please provide a command.
 I have to be honest, having a `zk system` command is pretty cool. I bet it's very useful to debug issues because you can can share all this information with the Mina team.
 
 ```sh
-$ zk system          
+$ zk system
 Please include the following when submitting a Github issue:
 
   System:
@@ -149,7 +149,7 @@ $ zk config
   ├────────┴────────┴────────────────┤
   │ None found                       │
   └──────────────────────────────────┘
-  
+
 Add a new network:
 ✔ Choose a name (can be anything): · mina-tutorial
 ✔ Set the Mina GraphQL API URL to deploy to: · https://proxy.berkeley.minaexplorer.com/graphql
@@ -162,7 +162,7 @@ Success!
 Next steps:
   - If this is a testnet, request tMINA at:
     https://faucet.minaprotocol.com/?address=B62qoQxnv1r7Cnk6mbAz99WgHnAqjqZigmR8UWQqgP44ubmoQp43ZnM
-  - To deploy, run: `zk deploy mina-tutorial` 
+  - To deploy, run: `zk deploy mina-tutorial`
 ```
 
 Checking the config file we see the `config.json` file being updated to:
@@ -240,7 +240,7 @@ And I wait for a while, finally:
   ├────────────────┼─────────────────────────────────────────────────┤
   │ Smart Contract │ Add                                             │
   └────────────────┴─────────────────────────────────────────────────┘
-  
+
   Are you sure you want to send (yes/no)? · yes
 ✔ Send to network
 
@@ -285,7 +285,7 @@ import {
  *
  * The Add contract initializes the state variable 'num' to be a Field(1) value by default when deployed.
  * When the 'update' method is called, the Add contract adds Field(2) to its 'num' contract state.
- * 
+ *
  * This file is safe to delete and replace with your own contract.
  */
 export class Add extends SmartContract {
@@ -361,13 +361,13 @@ Same as before.
 I have to remove the example contract and start fresh.
 
 ```sh
-$ rm Add.t*     
+$ rm Add.t*
 ```
 
 To generate a new file, I have to use the `zk` command:
 
 ```sh
-$ zk file Square           
+$ zk file Square
 Created Square.ts
 Created Square.test.ts
 ```
@@ -381,7 +381,7 @@ $ touch main.ts
 In the [`src`](01-hello-world/src/) folder we have the files:
 
 ```sh
-$ ls -l            
+$ ls -l
 total 16
 -rw-r--r--  1 cleanunicorn  staff  137 14 Nov 17:43 Square.test.ts
 -rw-r--r--  1 cleanunicorn  staff    0 14 Nov 17:43 Square.ts
@@ -404,7 +404,7 @@ export { Square };
 Trying to compile the project I get an error, which is expected because I don't implement the `Square` contract yet.
 
 ```sh
-$ npm run build             
+$ npm run build
 
 > 01-hello-world@0.1.0 build
 > tsc -p tsconfig.json
@@ -416,8 +416,8 @@ src/index.ts:1:24 - error TS2306: File '/Users/cleanunicorn/Development/github.c
 
 src/Square.ts:1:1 - error TS1208: 'Square.ts' cannot be compiled under '--isolatedModules' because it is considered a global script file. Add an import, export, or an empty 'export {}' statement to make it a module.
 
-1 
-  
+1
+
 
 
 Found 2 errors in 2 files.
@@ -455,7 +455,7 @@ While I was writing code I was kicked out of the coffee shop I was working at so
 
 ---
 
-Overnight an upgrade to the testnet is prepred so I need to upgrade `SnarkyJS 0.7.0` and `zkapp-cli 0.5.0`. 
+Overnight an upgrade to the testnet is prepred so I need to upgrade `SnarkyJS 0.7.0` and `zkapp-cli 0.5.0`.
 
 ![testnet upgrade](static/SCR-20221115-fx6.png)
 
@@ -523,7 +523,7 @@ I find out the problem was with my `exec` script and I proceed to fix it by chan
 Cool, it seems like I got a successful blockchain startup and shutdown.
 
 ```sh
-$ npm run exec          
+$ npm run exec
 
 > 01-hello-world@0.1.0 exec
 > npm run build && node build/src/main.js
@@ -566,7 +566,7 @@ I made the following change to the `init` method to see if there is a state set,
     try {
         const num = this.num.get();
         this.num.set(Field(9));
-    } catch { 
+    } catch {
         this.num.set(Field(3));
     }
 }
@@ -741,7 +741,7 @@ Once the full code building and executing the transaction was wrapped, the execu
 
 ```ts
 // Send an invalid state update
-try { 
+try {
     const txn3 = await Mina.transaction(deployerAccount, () => {
         contract.update(Field(100));
         contract.sign(zkAppPrivateKey);
@@ -821,9 +821,9 @@ From https://github.com/o1-labs/zkapp-cli
    e10b6ef..5425df3  main                           -> o1-labs/main
 You asked to pull from the remote 'o1-labs', but did not specify
 a branch. Because this is not the default configured remote
-(base) 
+(base)
  16:33:20  ✘  cleanunicorn@Daniels-MacBook-Pro-2  ...github.com/cleanunicorn/zkapp-cli  ⬡ v14.17.6   main ✔ 
-$ git merge o1-labs/main               
+$ git merge o1-labs/main
 Updating c379325..5425df3
 Fast-forward
  examples/sudoku/ts/src/sudoku.ts           |  4 ++--
@@ -836,9 +836,9 @@ Fast-forward
  templates/project-ts/src/Add.test.ts       | 23 +++++++++++++++--------
  templates/project-ts/src/Add.ts            |  8 ++++++--
  9 files changed, 53 insertions(+), 37 deletions(-)
-(base) 
+(base)
  16:33:36  cleanunicorn@Daniels-MacBook-Pro-2  ...github.com/cleanunicorn/zkapp-cli  ⬡ v14.17.6   main ✔ ⬆ 
-$ npm i -g .              
+$ npm i -g .
 
 changed 1 package, and audited 3 packages in 875ms
 
@@ -909,6 +909,8 @@ import { IncrementSecret } from './IncrementSecret.js';
 export { IncrementSecret };
 ```
 
+### Writing code
+
 I always prefer to write things by hand, it forces me to think about each line of code, so I start editing `IncrementSecret.ts`, all this while having `Square.ts` in a separate tab to see how the contract is structured and if any signigicant differences are between the two.
 
 The deploy is not yet different from the previous tutorial, however an import is new `Poseidon`. Checking the next step in the tutorial, I see `Poseidon` provides a hash function.
@@ -968,3 +970,224 @@ I have to contact the development team and see what's going on. I assume the lib
 
 I got a link to the changelog, and I was able to see why the `init` method was creating an error for me.
 
+After some time I see some of the documentation was updated to reflect the new `SnarkyJS` library.
+
+![updated doc](static/SCR-20221120-f5g.png)
+
+The documentation clearly is a work in progress, since the code was updated, but the text still refers to the old `init` name.
+
+I keep my `initialize` method since it achieves the same purpose as the newly described method in the updated documentation.
+
+And I add a new method `incrementSecret` that increments the current value of the secret by 1. It's interesting to me that the `incrementSecret` method is public and contains 2 arguments: salt and secret. Both arguments are used to regenerate the initial hash, which is validated with an assertion. If the assertion passes, the secret is incremented by 1.
+
+I'm trying to figure out what would happen if the `salt` argument would be omitted. How would this open up the contract to attacks? I'm not sure yet, but I'll keep thinking about it.
+
+I'm also thinking that I can change the `salt` with each execution, but still increment the secret normally. I might change this implementation after I finish the current tutorial.
+
+The pattern of getting a method and asserting starts to gather more logic, but I'm still unsure why the current pattern is absolutely necessary.
+
+```ts
+const x = this.x.get();
+this.x.assertEquals(x);
+```
+
+For now, I'm thinking that the assertion makes sure the obtained value is proven to be the correct one. How the check happens is still a mistery.
+
+The documentation states:
+
+> Because zkApp smart contracts are run off chain, our salt and secret remain private and are never transmitted anywhere. Only the result, updating x on-chain state to `hash([ salt, secret + 1])` is revealed. Because the salt and secret can't be deduced from their hash, they remain private.
+
+Coming from an Ethereum background I am used to the idea of having a contract state. Even if the contract does not provide explicit `getter` method for the state, I know the values can still be read from the chain. With Mina, what is on chain and the transparency of it, is the most intriguing thing about it.
+
+### Interacting with the contract
+
+Similarly we start editing the `main.ts` script. The documentation does not immediatelly provide the full code for the the script, but it does provide the full source code on GitHub. However, I try to write the code by hand, without peeking at the final code, but by using my previously written [`main.ts` in `01-hello-world`](01-hello-world/src/main.ts).
+
+I start by importing a few libs, and awaiting for `SnarkyJS` to fully load:
+
+import { IncrementSecret } from "./IncrementSecret";
+import {
+    isReady,
+    shutdown,
+    Field,
+    Mina,
+    PrivateKey,
+    AccountUpdate,
+} from 'snarkyjs';
+
+(async function main() {
+    await isReady;
+
+    console.log('SnarkyJS is ready!');
+```
+
+Next, I have to setup a local blockchain dev environment and generate an active account that will do all future actions.
+
+```ts
+    const Local = Mina.LocalBlockchain();
+    Mina.setActiveInstance(Local);
+    const deployerAccount = Local.testAccounts[0].privateKey;
+
+    const zkAppPrivateKey = PrivateKey.random();
+    const zkAppAddress = zkAppPrivateKey.toPublicKey();
+```
+
+I start writing the deploy transaction and observe that in the deploy arguments I send the `zkAppPrivateKey`; this makes me check my previous code and the documentation. I see that in all cases the private key is used, but my previous experience with Ethereum made me doubt myself. I have to remember that these transactions are not transparent, the information sent to the chain is not cleartext, it's a proof of an action.
+
+Writing the code, I observe the editor tells me the `.sign()` method is deprecated in favor of `.requireSignature`. It's quite cool that the editor notifies me. The dev team really spends the time to create a smooth experience for their user (the contract dev in this case).
+
+![`sign()` is deprecated](src/../static/SCR-20221120-fwh.png)
+
+Again, the documentation is not fully updated, this time the code still points to the deprecated method. Not a problem, I have to figure it out myself.
+
+I navigate to [`SnarkyJS` source code](https://github.com/o1-labs/snarkyjs) with increased confidence, knowing I will find some kind of explanation and information about the [new method `requireSignature`](https://github.com/o1-labs/snarkyjs/pull/558).
+
+Based on the provided information I take my best guess and write the code as:
+
+```ts
+const contract = new IncrementSecret(zkAppAddress);
+const deployTxn = await Mina.transaction(deployerAccount, () => {
+    AccountUpdate.fundNewAccount(deployerAccount);
+
+    contract.deploy({ zkappKey: zkAppPrivateKey });
+    contract.initialize(salt, Field(100));
+    contract.requireSignature();
+});
+await deployTxn.sign([zkAppPrivateKey]).send();
+
+console.log('Deployed contract ', deployTxn.toPretty());
+```
+
+I use the new method `.toPretty()` to show information about the transaction.
+
+```sh
+$ npm run exec                           
+
+> 02-private-inputs-and-hash-functions@0.1.0 exec
+> npm run build && node build/src/main.js
+
+
+> 02-private-inputs-and-hash-functions@0.1.0 build
+> tsc -p tsconfig.json
+
+SnarkyJS is ready!
+Deployed contract  [
+  {
+    publicKey: '..8YJ6',
+    fee: '0',
+    nonce: '0',
+    authorization: '..xZH6'
+  },
+  {
+    publicKey: '..8YJ6',
+    balanceChange: { magnitude: '1000000000', sgn: 'Negative' },
+    incrementNonce: true,
+    callDepth: 0,
+    preconditions: { account: '{"nonce":{"lower":"1","upper":"1"}}' },
+    authorizationKind: 'Signature',
+    authorization: { signature: '..dban' }
+  },
+  {
+    label: 'IncrementSecret, no method',
+    publicKey: '..6GDd',
+    update: {
+      appState: '["0","0","0","0","0","0","0","0"]',
+      permissions: '{"editState":"Either","send":"Signature","receive":"None","setDelegate":"Signature","setPermissions":"Signature","setVerificationKey":"Signature","setZkappUri":"Signature","editSequenceState":"Proof","setTokenSymbol":"Signature","incrementNonce":"Signature","setVotingFor":"Signature"}'
+    },
+    incrementNonce: true,
+    callDepth: 0,
+    preconditions: { account: '{"nonce":{"lower":"0","upper":"0"}}' },
+    authorizationKind: 'Signature',
+    authorization: { signature: '..Rukg' }
+  },
+  {
+    label: 'IncrementSecret.initialize()',
+    publicKey: '..6GDd',
+    update: {
+      appState: '["18838744120230612428656320970041324413421997848543721932144122401163528329606",null,null,null,null,null,null,null]'
+    },
+    incrementNonce: true,
+    callDepth: 0,
+    preconditions: { account: '{"nonce":{"lower":"1","upper":"1"}}' },
+    authorizationKind: 'Signature',
+    authorization: { signature: '..Rukg' }
+  }
+]
+```
+
+Even though I don't understand most of the things, it gives me some amount of certainty that the transaction was accepted by the chain.
+
+It's really cool that now I can also clearly see the application state, specifically the 8 words that are stored in the contract. I can see that the first word is the hash between the salt and the private input, and the rest are `null`:
+
+```
+    update: {
+      appState: '["18838744120230612428656320970041324413421997848543721932144122401163528329606",null,null,null,null,null,null,null]'
+    },
+```
+
+I start writing the code to increment the secret and I try not to use the documentation at all to see how far I get.
+
+My best guess:
+
+```ts
+// Increment the secret
+const incrementTxn = await Mina.transaction(deployerAccount, () => {
+    contract.incrementSecret(salt, Field(100));
+    contract.requireSignature();
+});
+await incrementTxn.sign([zkAppPrivateKey]).send();
+
+console.log('Incremented secret ', incrementTxn.toPretty());
+```
+
+The output of the increment transaction is:
+
+```sh
+Incremented secret  [
+  {
+    publicKey: '..3K6V',
+    fee: '0',
+    nonce: '2',
+    authorization: '..zkW8'
+  },
+  {
+    label: 'IncrementSecret.incrementSecret()',
+    publicKey: '..22dv',
+    update: {
+      appState: '["23455213285028980465078688160421038404801673331126351098347724843692317636300",null,null,null,null,null,null,null]'
+    },
+    incrementNonce: true,
+    callDepth: 0,
+    preconditions: {
+      account: '{"nonce":{"lower":"2","upper":"2"},"state":["7266693131311725581596609635179868177530775923612181556055647307105385497110",null,null,null,null,null,null,null]}'
+    },
+    authorizationKind: 'Signature',
+    authorization: { signature: '..Q36s' }
+  }
+]
+```
+
+I also want to check the state of the contract by reading its current state.
+
+I regenerated the hash in my `main.ts` script and obtained the contract's state for the value `x`:
+
+```ts
+  // Check the secret was incremented
+  const incrementedSecret = Poseidon.hash([salt, Field(101)]);
+  const stateSecret = contract.x.get();
+  console.log('state after increment:', stateSecret.toString());
+  console.log('expected state after increment:', incrementedSecret.toString());
+```
+
+Displaying both values I see they match:
+
+```sh
+state after increment: 12756037788665929549385794475241001057752518981480064035454555158192023948218
+expected state after increment: 12756037788665929549385794475241001057752518981480064035454555158192023948218
+```
+
+I wasn't sure if I would see the same value, but clearly they both match and I am very happy with the result.
+
+🎉🎉🎉
+
+---
